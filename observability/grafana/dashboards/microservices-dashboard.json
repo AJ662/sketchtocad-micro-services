@@ -1,0 +1,50 @@
+{
+  "title": "SketchToCAD Microservices Dashboard",
+  "uid": "sketchtocad-microservices",
+  "version": 1,
+  "timezone": "browser",
+  "schemaVersion": 16,
+  "editable": true,
+  "panels": [
+    {
+      "id": 1,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "type": "graph",
+      "title": "Service Response Times",
+      "targets": [
+        {
+          "expr": "http_request_duration_seconds_sum{job=\"image-processing\"}",
+          "legendFormat": "Image Processing"
+        },
+        {
+          "expr": "http_request_duration_seconds_sum{job=\"clustering\"}",
+          "legendFormat": "Clustering"
+        },
+        {
+          "expr": "http_request_duration_seconds_sum{job=\"dxf-export\"}",
+          "legendFormat": "DXF Export"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "type": "graph",
+      "title": "Request Rate",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"image-processing\"}[5m])",
+          "legendFormat": "Image Processing"
+        },
+        {
+          "expr": "rate(http_requests_total{job=\"clustering\"}[5m])",
+          "legendFormat": "Clustering"
+        },
+        {
+          "expr": "rate(http_requests_total{job=\"dxf-export\"}[5m])",
+          "legendFormat": "DXF Export"
+        }
+      ]
+    }
+  ]
+}

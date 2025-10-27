@@ -1,0 +1,93 @@
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.51
+    container_name: jaeger
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+      - "9411:9411"
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - sketchtocad
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - sketchtocad
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - sketchtocad
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki_data:/loki
+    networks:
+      - sketchtocad
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.3
+    container_name: promtail
+    volumes:
+      - /var/log:/var/log
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./observability/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - sketchtocad
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+    name: sketchtocad-prometheus-data
+  grafana_data:
+    name: sketchtocad-grafana-data
+  loki_data:
+    name: sketchtocad-loki-data

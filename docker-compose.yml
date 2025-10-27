@@ -1,0 +1,96 @@
+include:
+  - docker-compose.infra.yml
+  - docker-compose.observability.yml  
+
+services:
+  image-processing:
+    build: ./SketchToCad-image-processing
+    container_name: image-processing-service
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./SketchToCad-image-processing/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+      prometheus:
+        condition: service_started
+    networks:
+      - sketchtocad
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    command: sh -c "sleep 10 && uvicorn app.main:app --host 0.0.0.0 --port 8001"
+
+  clustering:
+    build: ./SketchToCad-clustering
+    container_name: clustering-service
+    ports:
+      - "8002:8002"
+    env_file:
+      - ./SketchToCad-clustering/.env
+    depends_on:
+      - jaeger
+      - prometheus
+    networks:
+      - sketchtocad
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  dxf-export:
+    build: ./SketchToCad-image-to-cad
+    container_name: dxf-export-service
+    ports:
+      - "8003:8003"
+    env_file:
+      - ./SketchToCad-image-to-cad/.env
+    depends_on:
+      - jaeger
+      - prometheus
+    networks:
+      - sketchtocad
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build: 
+      context: ./SketchToCad-Frontend
+      dockerfile: Dockerfile
+    container_name: sketchtocad-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./SketchToCad-Frontend/.env
+    depends_on:
+      image-processing:
+        condition: service_healthy
+      clustering:
+        condition: service_healthy
+      dxf-export:
+        condition: service_healthy
+    networks:
+      - sketchtocad
+    restart: unless-stopped
+
+networks:
+  sketchtocad:
+    driver: bridge
+    name: sketchtocad-network

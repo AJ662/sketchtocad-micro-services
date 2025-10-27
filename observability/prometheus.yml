@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'image-processing'
+    static_configs:
+      - targets: ['image-processing:8001']
+    metrics_path: '/metrics'
+  
+  - job_name: 'clustering'
+    static_configs:
+      - targets: ['clustering:8002']
+    metrics_path: '/metrics'
+  
+  - job_name: 'dxf-export'
+    static_configs:
+      - targets: ['dxf-export:8003']
+    metrics_path: '/metrics'
