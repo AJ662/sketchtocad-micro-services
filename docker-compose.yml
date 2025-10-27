@@ -70,6 +70,29 @@ services:
       retries: 3
     restart: unless-stopped
 
+  api-gateway:
+    build: ./SketchToCad-api-gateway
+    container_name: api-gateway
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./SketchToCad-api-gateway/.env
+    depends_on:
+      image-processing:
+        condition: service_healthy
+      clustering:
+        condition: service_healthy
+      dxf-export:
+        condition: service_healthy
+    networks:
+      - sketchtocad
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
   frontend:
     build: 
       context: ./SketchToCad-Frontend
