@@ -84,6 +84,21 @@ services:
       - sketchtocad
     restart: unless-stopped
 
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    ports:
+      - "9002:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - sketchtocad
+    restart: unless-stopped
+
 volumes:
   prometheus_data:
     name: sketchtocad-prometheus-data
@@ -91,3 +106,9 @@ volumes:
     name: sketchtocad-grafana-data
   loki_data:
     name: sketchtocad-loki-data
+  sonarqube_data:
+    name: sketchtocad-sonarqube-data
+  sonarqube_extensions:
+    name: sketchtocad-sonarqube-extensions
+  sonarqube_logs:
+    name: sketchtocad-sonarqube-logs
