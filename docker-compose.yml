@@ -3,6 +3,35 @@ include:
   - docker-compose.observability.yml  
 
 services:
+  # NEW: Workflow Orchestrator
+  workflow-orchestrator:
+    build: ./SketchToCad-workflow-orchestrator
+    container_name: workflow-orchestrator
+    ports:
+      - "8004:8004"
+    env_file:
+      - ./SketchToCad-workflow-orchestrator/.env
+    depends_on:
+      image-processing:
+        condition: service_healthy
+      clustering:
+        condition: service_healthy
+      dxf-export:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+      prometheus:
+        condition: service_started
+    networks:
+      - sketchtocad
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
   image-processing:
     build: ./SketchToCad-image-processing
     container_name: image-processing-service
@@ -78,11 +107,7 @@ services:
     env_file:
       - ./SketchToCad-api-gateway/.env
     depends_on:
-      image-processing:
-        condition: service_healthy
-      clustering:
-        condition: service_healthy
-      dxf-export:
+      workflow-orchestrator:  # CHANGED: Now depends on orchestrator instead of individual services
         condition: service_healthy
     networks:
       - sketchtocad
@@ -103,11 +128,7 @@ services:
     env_file:
       - ./SketchToCad-Frontend/.env
     depends_on:
-      image-processing:
-        condition: service_healthy
-      clustering:
-        condition: service_healthy
-      dxf-export:
+      workflow-orchestrator:  # CHANGED: Now depends on orchestrator
         condition: service_healthy
     networks:
       - sketchtocad
