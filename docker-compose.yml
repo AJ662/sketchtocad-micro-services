@@ -32,6 +32,21 @@ services:
       start_period: 40s
     restart: unless-stopped
 
+  orchestrator-worker:
+    build: ./sketchtocad-workflow-orchestrator
+    container_name: orchestrator-worker
+    command: python -m app.workers.orchestrator_consumer
+    env_file:
+      - ./sketchtocad-workflow-orchestrator/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres-saga:
+        condition: service_healthy
+    networks:
+      - sketchtocad
+    restart: unless-stopped
+
   image-processing:
     build: ./SketchToCad-image-processing
     container_name: image-processing-service
@@ -61,6 +76,25 @@ services:
     restart: unless-stopped
     command: sh -c "sleep 10 && uvicorn app.main:app --host 0.0.0.0 --port 8001"
 
+  image-processing-worker:
+    build: ./SketchToCad-image-processing
+    container_name: image-processing-worker
+    command: python -m app.workers.event_consumer
+    env_file:
+      - ./SketchToCad-image-processing/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - sketchtocad
+    restart: unless-stopped
+
   clustering:
     build: ./SketchToCad-clustering
     container_name: clustering-service
@@ -80,6 +114,19 @@ services:
       retries: 3
     restart: unless-stopped
 
+  clustering-worker:
+    build: ./SketchToCad-clustering
+    container_name: clustering-worker
+    command: python -m app.workers.event_consumer
+    env_file:
+      - ./SketchToCad-clustering/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - sketchtocad
+    restart: unless-stopped
+
   dxf-export:
     build: ./SketchToCad-image-to-cad
     container_name: dxf-export-service
@@ -97,6 +144,19 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    restart: unless-stopped
+
+  dxf-export-worker:
+    build: ./SketchToCad-image-to-cad
+    container_name: dxf-export-worker
+    command: python -m app.workers.event_consumer
+    env_file:
+      - ./SketchToCad-image-to-cad/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - sketchtocad
     restart: unless-stopped
 
   api-gateway:
