@@ -10,7 +10,7 @@ services:
     ports:
       - "8004:8004"
     env_file:
-      - ./SketchToCad-workflow-orchestrator/.env
+      - ./sketchtocad-workflow-orchestrator/.env
     depends_on:
       image-processing:
         condition: service_healthy
