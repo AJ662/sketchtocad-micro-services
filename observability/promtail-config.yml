@@ -9,10 +9,43 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: microservices
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: microservices
-          __path__: /var/log/*.log
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Extract container name
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      
+      # Default service to container name
+      - source_labels: ['container']
+        target_label: 'service'
+      
+      # Clean up service name: remove -service suffix if present
+      - source_labels: ['service']
+        regex: '(.*)-service'
+        target_label: 'service'
+        replacement: '$1'
+      # Add project label
+      - target_label: 'project'
+        replacement: 'sketchtocad'
+    pipeline_stages:
+      # Parse JSON logs
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            message: message
+            service: service
+      # Drop health check logs to reduce noise
+      - drop:
+          expression: '.*(/health|/metrics|healthcheck).*'
+      # Extract log level
+      - labels:
+          level:
+      # Format timestamp
+      - timestamp:
+          source: timestamp
+          format: Unix

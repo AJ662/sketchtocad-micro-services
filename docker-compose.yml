@@ -38,11 +38,18 @@ services:
     command: python -m app.workers.orchestrator_consumer
     env_file:
       - ./sketchtocad-workflow-orchestrator/.env
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+      - LOG_LEVEL=INFO
+      - SERVICE_NAME=orchestrator-worker
     depends_on:
       kafka:
         condition: service_healthy
       postgres-saga:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - sketchtocad
     restart: unless-stopped
@@ -82,6 +89,11 @@ services:
     command: python -m app.workers.event_consumer
     env_file:
       - ./SketchToCad-image-processing/.env
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+      - LOG_LEVEL=INFO
+      - SERVICE_NAME=image-processing-worker
     depends_on:
       kafka:
         condition: service_healthy
@@ -91,6 +103,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - sketchtocad
     restart: unless-stopped
@@ -120,9 +134,16 @@ services:
     command: python -m app.workers.event_consumer
     env_file:
       - ./SketchToCad-clustering/.env
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+      - LOG_LEVEL=INFO
+      - SERVICE_NAME=clustering-worker
     depends_on:
       kafka:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - sketchtocad
     restart: unless-stopped
@@ -152,9 +173,16 @@ services:
     command: python -m app.workers.event_consumer
     env_file:
       - ./SketchToCad-image-to-cad/.env
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+      - LOG_LEVEL=INFO
+      - SERVICE_NAME=dxf-export-worker
     depends_on:
       kafka:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - sketchtocad
     restart: unless-stopped
