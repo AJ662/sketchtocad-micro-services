@@ -1,0 +1,72 @@
+# Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clustering
+  namespace: default
+  labels:
+    app: clustering
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clustering
+      component: service
+  template:
+    metadata:
+      labels:
+        app: clustering
+        component: service
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: service
+        image: sketchtocad-micro-services-clustering:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8002
+        envFrom:
+        - configMapRef:
+            name: common-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clustering
+  namespace: default
+spec:
+  ports:
+  - port: 8002
+    name: http
+  selector:
+    app: clustering
+    component: service
+
+---
+# Worker
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clustering-worker
+  namespace: default
+  labels:
+    app: clustering-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clustering-worker
+  template:
+    metadata:
+      labels:
+        app: clustering-worker
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: worker
+        image: sketchtocad-micro-services-clustering-worker:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "app.workers.event_consumer"]
+        envFrom:
+        - configMapRef:
+            name: common-config

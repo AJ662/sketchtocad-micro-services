@@ -1,0 +1,114 @@
+# Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-processing
+  namespace: default
+  labels:
+    app: image-processing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: image-processing
+      component: service
+  template:
+    metadata:
+      labels:
+        app: image-processing
+        component: service
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: service
+        image: sketchtocad-micro-services-image-processing:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8001
+        envFrom:
+        - configMapRef:
+            name: common-config
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:password@postgres-image-processing:5432/imageprocessingdb"
+        - name: REDIS_URL
+          value: "redis://redis-cache:6379/0"
+        - name: S3_ENDPOINT
+          value: "http://minio-storage:9000"
+        - name: POSTGRES_HOST
+          value: "postgres-image-processing"
+        - name: POSTGRES_DB
+          value: "imageprocessingdb"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-processing
+  namespace: default
+spec:
+  ports:
+  - port: 8001
+    name: http
+  selector:
+    app: image-processing
+    component: service
+
+---
+# Worker
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-processing-worker
+  namespace: default
+  labels:
+    app: image-processing-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: image-processing-worker
+  template:
+    metadata:
+      labels:
+        app: image-processing-worker
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: worker
+        image: sketchtocad-micro-services-image-processing-worker:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "app.workers.event_consumer"]
+        envFrom:
+        - configMapRef:
+            name: common-config
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:password@postgres-image-processing:5432/imageprocessingdb"
+        - name: REDIS_URL
+          value: "redis://redis-cache:6379/0"
+        - name: S3_ENDPOINT
+          value: "http://minio-storage:9000"
+        - name: POSTGRES_HOST
+          value: "postgres-image-processing"
+        - name: POSTGRES_DB
+          value: "imageprocessingdb"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-password

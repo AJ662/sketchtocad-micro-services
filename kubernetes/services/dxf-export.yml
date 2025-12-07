@@ -1,0 +1,72 @@
+# Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dxf-export
+  namespace: default
+  labels:
+    app: dxf-export
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dxf-export
+      component: service
+  template:
+    metadata:
+      labels:
+        app: dxf-export
+        component: service
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: service
+        image: sketchtocad-micro-services-dxf-export:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8003
+        envFrom:
+        - configMapRef:
+            name: common-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dxf-export
+  namespace: default
+spec:
+  ports:
+  - port: 8003
+    name: http
+  selector:
+    app: dxf-export
+    component: service
+
+---
+# Worker
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dxf-export-worker
+  namespace: default
+  labels:
+    app: dxf-export-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dxf-export-worker
+  template:
+    metadata:
+      labels:
+        app: dxf-export-worker
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: worker
+        image: sketchtocad-micro-services-dxf-export-worker:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "app.workers.event_consumer"]
+        envFrom:
+        - configMapRef:
+            name: common-config

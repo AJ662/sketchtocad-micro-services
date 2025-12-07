@@ -1,0 +1,102 @@
+# Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workflow-orchestrator
+  namespace: default
+  labels:
+    app: workflow-orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: workflow-orchestrator
+      component: service
+  template:
+    metadata:
+      labels:
+        app: workflow-orchestrator
+        component: service
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: service
+        image: sketchtocad-micro-services-workflow-orchestrator:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8004
+        envFrom:
+        - configMapRef:
+            name: common-config
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:password@postgres-saga:5432/sagadb"
+        - name: POSTGRES_DB
+          value: "sagadb"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: workflow-orchestrator
+  namespace: default
+spec:
+  ports:
+  - port: 8004
+    name: http
+  selector:
+    app: workflow-orchestrator
+    component: service
+
+---
+# Worker
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator-worker
+  namespace: default
+  labels:
+    app: orchestrator-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orchestrator-worker
+  template:
+    metadata:
+      labels:
+        app: orchestrator-worker
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: worker
+        image: sketchtocad-micro-services-orchestrator-worker:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "-m", "app.workers.orchestrator_consumer"]
+        envFrom:
+        - configMapRef:
+            name: common-config
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:password@postgres-saga:5432/sagadb"
+        - name: POSTGRES_DB
+          value: "sagadb"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-password
