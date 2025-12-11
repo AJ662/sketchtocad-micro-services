@@ -70,7 +70,7 @@ spec:
       name: postgres-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "hostpath" # Docker Desktop default
+      storageClassName: "standard" # GKE default storage class
       resources:
         requests:
           storage: 1Gi
@@ -137,7 +137,7 @@ spec:
       name: postgres-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "hostpath" 
+      storageClassName: "standard" # GKE default storage class
       resources:
         requests:
           storage: 1Gi

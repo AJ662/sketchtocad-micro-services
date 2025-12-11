@@ -21,8 +21,8 @@ spec:
       enableServiceLinks: false
       containers:
       - name: service
-        image: sketchtocad-micro-services-dxf-export:latest
-        imagePullPolicy: IfNotPresent
+        image: gcr.io/treesandshrubsoftheworld/image-to-cad:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8003
         envFrom:
@@ -64,8 +64,8 @@ spec:
       enableServiceLinks: false
       containers:
       - name: worker
-        image: sketchtocad-micro-services-dxf-export-worker:latest
-        imagePullPolicy: IfNotPresent
+        image: gcr.io/treesandshrubsoftheworld/image-to-cad:latest
+        imagePullPolicy: Always
         command: ["python", "-m", "app.workers.event_consumer"]
         envFrom:
         - configMapRef:

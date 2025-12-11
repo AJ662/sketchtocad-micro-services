@@ -18,8 +18,8 @@ spec:
       enableServiceLinks: false
       containers:
       - name: frontend
-        image: sketchtocad-micro-services-frontend:latest
-        imagePullPolicy: IfNotPresent
+        image: gcr.io/treesandshrubsoftheworld/frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
         envFrom:

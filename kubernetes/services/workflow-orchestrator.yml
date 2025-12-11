@@ -21,8 +21,8 @@ spec:
       enableServiceLinks: false
       containers:
       - name: service
-        image: sketchtocad-micro-services-workflow-orchestrator:latest
-        imagePullPolicy: IfNotPresent
+        image: gcr.io/treesandshrubsoftheworld/workflow-orchestrator:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8004
         envFrom:
@@ -79,8 +79,8 @@ spec:
       enableServiceLinks: false
       containers:
       - name: worker
-        image: sketchtocad-micro-services-orchestrator-worker:latest
-        imagePullPolicy: IfNotPresent
+        image: gcr.io/treesandshrubsoftheworld/workflow-orchestrator:latest
+        imagePullPolicy: Always
         command: ["python", "-m", "app.workers.orchestrator_consumer"]
         envFrom:
         - configMapRef:

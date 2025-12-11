@@ -21,8 +21,8 @@ spec:
       enableServiceLinks: false
       containers:
       - name: service
-        image: sketchtocad-micro-services-clustering:latest
-        imagePullPolicy: IfNotPresent
+        image: gcr.io/treesandshrubsoftheworld/clustering:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8002
         envFrom:
@@ -64,8 +64,8 @@ spec:
       enableServiceLinks: false
       containers:
       - name: worker
-        image: sketchtocad-micro-services-clustering-worker:latest
-        imagePullPolicy: IfNotPresent
+        image: gcr.io/treesandshrubsoftheworld/clustering:latest
+        imagePullPolicy: Always
         command: ["python", "-m", "app.workers.event_consumer"]
         envFrom:
         - configMapRef:
