@@ -35,7 +35,7 @@ metadata:
   name: api-gateway
   namespace: default
 spec:
-  type: LoadBalancer # Or NodePort for local, Ingress in prod
+  type: NodePort  # Required by GKE Ingress
   ports:
   - port: 8000
     targetPort: 8000

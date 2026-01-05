@@ -35,7 +35,7 @@ metadata:
   name: frontend
   namespace: default
 spec:
-  type: ClusterIP  # Ingress handles external access
+  type: NodePort  # Required by GKE Ingress
   ports:
   - port: 3000
     targetPort: 3000
