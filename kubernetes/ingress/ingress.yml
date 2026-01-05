@@ -1,0 +1,43 @@
+# GKE Ingress for SketchToCAD
+# Routes:
+#   / -> Frontend
+#   /api/* -> API Gateway
+#   /grafana -> Grafana
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sketchtocad-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    # Enable CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+spec:
+  rules:
+  - http:
+      paths:
+      # API Gateway - handles /api/v1/*
+      - path: /api/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 8000
+      # Grafana dashboard
+      - path: /grafana/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+      # Frontend - catch all (must be last)
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000

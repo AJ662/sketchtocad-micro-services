@@ -27,7 +27,7 @@ spec:
             name: common-config
         env:
         - name: NEXT_PUBLIC_API_URL
-          value: "http://localhost:8000/api/v1" # This needs to be the public URL of the gateway
+          value: "/api/v1"  # Relative path - Ingress routes to API Gateway
 ---
 apiVersion: v1
 kind: Service
@@ -35,7 +35,7 @@ metadata:
   name: frontend
   namespace: default
 spec:
-  type: LoadBalancer
+  type: ClusterIP  # Ingress handles external access
   ports:
   - port: 3000
     targetPort: 3000
