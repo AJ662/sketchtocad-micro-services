@@ -28,6 +28,23 @@ spec:
         envFrom:
         - configMapRef:
             name: common-config
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:password@postgres-dxf-export:5432/dxfexportdb"
+        - name: POSTGRES_HOST
+          value: "postgres-dxf-export"
+        - name: POSTGRES_DB
+          value: "dxfexportdb"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-password
 ---
 apiVersion: v1
 kind: Service
@@ -70,3 +87,66 @@ spec:
         envFrom:
         - configMapRef:
             name: common-config
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:password@postgres-dxf-export:5432/dxfexportdb"
+        - name: POSTGRES_HOST
+          value: "postgres-dxf-export"
+        - name: POSTGRES_DB
+          value: "dxfexportdb"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-password
+
+---
+# Sync Worker (for receiving data from other services)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dxf-export-sync-worker
+  namespace: default
+  labels:
+    app: dxf-export-sync-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dxf-export-sync-worker
+  template:
+    metadata:
+      labels:
+        app: dxf-export-sync-worker
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: sync-worker
+        image: gcr.io/treesandshrubsoftheworld/image-to-cad:latest
+        imagePullPolicy: Always
+        command: ["python", "-m", "app.workers.sync_consumer"]
+        envFrom:
+        - configMapRef:
+            name: common-config
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:password@postgres-dxf-export:5432/dxfexportdb"
+        - name: POSTGRES_HOST
+          value: "postgres-dxf-export"
+        - name: POSTGRES_DB
+          value: "dxfexportdb"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: postgres-password

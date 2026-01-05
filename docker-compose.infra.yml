@@ -13,7 +13,7 @@ services:
     networks:
       - sketchtocad
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sketchtocad"]
+      test: [ "CMD-SHELL", "pg_isready -U sketchtocad" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,7 +30,7 @@ services:
     networks:
       - sketchtocad
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -51,7 +51,7 @@ services:
     networks:
       - sketchtocad
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -71,7 +71,7 @@ services:
     networks:
       - sketchtocad
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181"]
+      test: [ "CMD", "bash", "-c", "echo ruok | nc localhost 2181" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -101,7 +101,7 @@ services:
     networks:
       - sketchtocad
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -141,6 +141,7 @@ services:
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic saga-commands --partitions 3 --replication-factor 1 --config retention.ms=604800000 &&
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic saga-events --partitions 3 --replication-factor 1 --config retention.ms=604800000 &&
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic saga-dlq --partitions 1 --replication-factor 1 --config retention.ms=2592000000 &&
+        kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic session-sync --partitions 3 --replication-factor 1 --config retention.ms=604800000 &&
         
         echo 'Topics created successfully!' &&
         kafka-topics --list --bootstrap-server kafka:9092
@@ -155,13 +156,53 @@ services:
       POSTGRES_PASSWORD: sketchtocad_dev
       POSTGRES_DB: saga_state
     ports:
-      - "5433:5432"  # Different port to avoid conflict
+      - "5433:5432" # Different port to avoid conflict
     volumes:
       - postgres_saga_data:/var/lib/postgresql/data
     networks:
       - sketchtocad
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sketchtocad"]
+      test: [ "CMD-SHELL", "pg_isready -U sketchtocad" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  postgres-clustering:
+    image: postgres:16-alpine
+    container_name: postgres-clustering
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: clusteringdb
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_clustering_data:/var/lib/postgresql/data
+    networks:
+      - sketchtocad
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  postgres-dxf-export:
+    image: postgres:16-alpine
+    container_name: postgres-dxf-export
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dxfexportdb
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_dxf_export_data:/var/lib/postgresql/data
+    networks:
+      - sketchtocad
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -182,3 +223,7 @@ volumes:
     name: sketchtocad-kafka-data
   postgres_saga_data:
     name: sketchtocad-postgres-saga-data
+  postgres_clustering_data:
+    name: sketchtocad-postgres-clustering-data
+  postgres_dxf_export_data:
+    name: sketchtocad-postgres-dxf-export-data

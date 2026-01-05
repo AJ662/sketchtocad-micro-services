@@ -141,3 +141,139 @@ spec:
       resources:
         requests:
           storage: 1Gi
+---
+# Postgres for Clustering Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-clustering
+  namespace: default
+  labels:
+    app: postgres-clustering
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: postgres-clustering
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-clustering
+  namespace: default
+spec:
+  serviceName: "postgres-clustering"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-clustering
+  template:
+    metadata:
+      labels:
+        app: postgres-clustering
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "clusteringdb"
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 1Gi
+---
+# Postgres for DXF Export Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-dxf-export
+  namespace: default
+  labels:
+    app: postgres-dxf-export
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: postgres-dxf-export
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-dxf-export
+  namespace: default
+spec:
+  serviceName: "postgres-dxf-export"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-dxf-export
+  template:
+    metadata:
+      labels:
+        app: postgres-dxf-export
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "dxfexportdb"
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 1Gi
