@@ -127,7 +127,7 @@ spec:
       enableServiceLinks: false
       containers:
       - name: sync-worker
-        image: 654654387729.dkr.ecr.eu-west-1.amazonaws.com/sketchtocad/image-to-cad:latest
+        image: 654654387729.dkr.ecr.eu-west-1.amazonaws.com/sketchtocad/dxf-export:latest
         imagePullPolicy: Always
         command: ["python", "-m", "app.workers.sync_consumer"]
         envFrom:
