@@ -1,4 +1,4 @@
-# GKE Ingress for SketchToCAD
+# AWS ALB Ingress for SketchToCAD
 # Routes:
 #   / -> Frontend
 #   /api/* -> API Gateway
@@ -9,33 +9,33 @@ metadata:
   name: sketchtocad-ingress
   namespace: default
   annotations:
-    kubernetes.io/ingress.class: "gce"
-    # Enable CORS
-    nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /health
 spec:
   rules:
   - http:
       paths:
       # API Gateway - handles /api/v1/*
-      - path: /api/*
-        pathType: ImplementationSpecific
+      - path: /api
+        pathType: Prefix
         backend:
           service:
             name: api-gateway
             port:
               number: 8000
       # Grafana dashboard
-      - path: /grafana/*
-        pathType: ImplementationSpecific
+      - path: /grafana
+        pathType: Prefix
         backend:
           service:
             name: grafana
             port:
               number: 3000
       # Frontend - catch all (must be last)
-      - path: /*
-        pathType: ImplementationSpecific
+      - path: /
+        pathType: Prefix
         backend:
           service:
             name: frontend

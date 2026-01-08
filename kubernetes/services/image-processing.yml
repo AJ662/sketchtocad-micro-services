@@ -21,7 +21,7 @@ spec:
       enableServiceLinks: false
       containers:
       - name: service
-        image: gcr.io/treesandshrubsoftheworld/image-processing:latest
+        image: 654654387729.dkr.ecr.eu-west-1.amazonaws.com/sketchtocad/image-processing:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8001
@@ -85,7 +85,7 @@ spec:
       enableServiceLinks: false
       containers:
       - name: worker
-        image: gcr.io/treesandshrubsoftheworld/image-processing:latest
+        image: 654654387729.dkr.ecr.eu-west-1.amazonaws.com/sketchtocad/image-processing:latest
         imagePullPolicy: Always
         command: ["python", "-m", "app.workers.event_consumer"]
         envFrom:
