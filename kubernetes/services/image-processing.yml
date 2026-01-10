@@ -51,6 +51,13 @@ spec:
             secretKeyRef:
               name: postgres-secrets
               key: postgres-password
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
 ---
 apiVersion: v1
 kind: Service
@@ -116,3 +123,10 @@ spec:
             secretKeyRef:
               name: postgres-secrets
               key: postgres-password
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi

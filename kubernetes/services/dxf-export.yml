@@ -45,6 +45,13 @@ spec:
             secretKeyRef:
               name: postgres-secrets
               key: postgres-password
+        resources:
+          requests:
+            cpu: 150m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
 ---
 apiVersion: v1
 kind: Service
@@ -104,7 +111,13 @@ spec:
             secretKeyRef:
               name: postgres-secrets
               key: postgres-password
-
+        resources:
+          requests:
+            cpu: 150m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
 ---
 # Sync Worker (for receiving data from other services)
 apiVersion: apps/v1
@@ -150,3 +163,10 @@ spec:
             secretKeyRef:
               name: postgres-secrets
               key: postgres-password
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 300m
+            memory: 256Mi
