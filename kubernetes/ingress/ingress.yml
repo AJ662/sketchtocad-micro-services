@@ -33,6 +33,14 @@ spec:
             name: grafana
             port:
               number: 3000
+      # Kafka UI
+      - path: /kafka-ui
+        pathType: Prefix
+        backend:
+          service:
+            name: kafka-ui
+            port:
+              number: 8080
       # Frontend - catch all (must be last)
       - path: /
         pathType: Prefix
