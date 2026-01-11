@@ -30,9 +30,9 @@ spec:
             name: common-config
         env:
         - name: DATABASE_URL
-          value: "postgresql://postgres:password@pgbouncer-clustering:6432/clusteringdb"
+          value: "postgresql://postgres:password@postgres-clustering:5432/clusteringdb"
         - name: POSTGRES_HOST
-          value: "pgbouncer-clustering"
+          value: "postgres-clustering"
         - name: POSTGRES_DB
           value: "clusteringdb"
         - name: POSTGRES_USER
@@ -96,9 +96,9 @@ spec:
             name: common-config
         env:
         - name: DATABASE_URL
-          value: "postgresql://postgres:password@pgbouncer-clustering:6432/clusteringdb"
+          value: "postgresql://postgres:password@postgres-clustering:5432/clusteringdb"
         - name: POSTGRES_HOST
-          value: "pgbouncer-clustering"
+          value: "postgres-clustering"
         - name: POSTGRES_DB
           value: "clusteringdb"
         - name: POSTGRES_USER
@@ -148,9 +148,9 @@ spec:
             name: common-config
         env:
         - name: DATABASE_URL
-          value: "postgresql://postgres:password@pgbouncer-clustering:6432/clusteringdb"
+          value: "postgresql://postgres:password@postgres-clustering:5432/clusteringdb"
         - name: POSTGRES_HOST
-          value: "pgbouncer-clustering"
+          value: "postgres-clustering"
         - name: POSTGRES_DB
           value: "clusteringdb"
         - name: POSTGRES_USER

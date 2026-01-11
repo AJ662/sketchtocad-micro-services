@@ -1,36 +1,9 @@
 # PgBouncer Connection Pooler for all PostgreSQL databases
 # This reduces connection overhead and prevents connection exhaustion
+# Using Bitnami PgBouncer image with environment variable configuration
 
 ---
 # PgBouncer for Saga Database (Workflow Orchestrator)
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pgbouncer-saga-config
-  namespace: default
-data:
-  pgbouncer.ini: |
-    [databases]
-    sagadb = host=postgres-saga port=5432 dbname=sagadb
-    
-    [pgbouncer]
-    listen_addr = 0.0.0.0
-    listen_port = 6432
-    auth_type = md5
-    auth_file = /etc/pgbouncer/userlist.txt
-    pool_mode = transaction
-    max_client_conn = 1000
-    default_pool_size = 20
-    min_pool_size = 5
-    reserve_pool_size = 5
-    reserve_pool_timeout = 3
-    server_idle_timeout = 60
-    log_connections = 0
-    log_disconnections = 0
-    
-  userlist.txt: |
-    "postgres" "password"
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -48,12 +21,32 @@ spec:
     spec:
       containers:
       - name: pgbouncer
-        image: edoburu/pgbouncer:1.21.0
+        image: bitnami/pgbouncer:latest
         ports:
         - containerPort: 6432
-        volumeMounts:
-        - name: config
-          mountPath: /etc/pgbouncer
+        env:
+        - name: POSTGRESQL_HOST
+          value: "postgres-saga"
+        - name: POSTGRESQL_PORT
+          value: "5432"
+        - name: POSTGRESQL_DATABASE
+          value: "sagadb"
+        - name: POSTGRESQL_USERNAME
+          value: "postgres"
+        - name: POSTGRESQL_PASSWORD
+          value: "password"
+        - name: PGBOUNCER_PORT
+          value: "6432"
+        - name: PGBOUNCER_POOL_MODE
+          value: "transaction"
+        - name: PGBOUNCER_MAX_CLIENT_CONN
+          value: "1000"
+        - name: PGBOUNCER_DEFAULT_POOL_SIZE
+          value: "20"
+        - name: PGBOUNCER_MIN_POOL_SIZE
+          value: "5"
+        - name: PGBOUNCER_RESERVE_POOL_SIZE
+          value: "5"
         resources:
           requests:
             cpu: 50m
@@ -61,10 +54,6 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
-      volumes:
-      - name: config
-        configMap:
-          name: pgbouncer-saga-config
 ---
 apiVersion: v1
 kind: Service
@@ -80,34 +69,6 @@ spec:
 
 ---
 # PgBouncer for Image Processing Database
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pgbouncer-image-processing-config
-  namespace: default
-data:
-  pgbouncer.ini: |
-    [databases]
-    imageprocessingdb = host=postgres-image-processing port=5432 dbname=imageprocessingdb
-    
-    [pgbouncer]
-    listen_addr = 0.0.0.0
-    listen_port = 6432
-    auth_type = md5
-    auth_file = /etc/pgbouncer/userlist.txt
-    pool_mode = transaction
-    max_client_conn = 1000
-    default_pool_size = 20
-    min_pool_size = 5
-    reserve_pool_size = 5
-    reserve_pool_timeout = 3
-    server_idle_timeout = 60
-    log_connections = 0
-    log_disconnections = 0
-    
-  userlist.txt: |
-    "postgres" "password"
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -125,12 +86,32 @@ spec:
     spec:
       containers:
       - name: pgbouncer
-        image: edoburu/pgbouncer:1.21.0
+        image: bitnami/pgbouncer:latest
         ports:
         - containerPort: 6432
-        volumeMounts:
-        - name: config
-          mountPath: /etc/pgbouncer
+        env:
+        - name: POSTGRESQL_HOST
+          value: "postgres-image-processing"
+        - name: POSTGRESQL_PORT
+          value: "5432"
+        - name: POSTGRESQL_DATABASE
+          value: "imageprocessingdb"
+        - name: POSTGRESQL_USERNAME
+          value: "postgres"
+        - name: POSTGRESQL_PASSWORD
+          value: "password"
+        - name: PGBOUNCER_PORT
+          value: "6432"
+        - name: PGBOUNCER_POOL_MODE
+          value: "transaction"
+        - name: PGBOUNCER_MAX_CLIENT_CONN
+          value: "1000"
+        - name: PGBOUNCER_DEFAULT_POOL_SIZE
+          value: "20"
+        - name: PGBOUNCER_MIN_POOL_SIZE
+          value: "5"
+        - name: PGBOUNCER_RESERVE_POOL_SIZE
+          value: "5"
         resources:
           requests:
             cpu: 50m
@@ -138,10 +119,6 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
-      volumes:
-      - name: config
-        configMap:
-          name: pgbouncer-image-processing-config
 ---
 apiVersion: v1
 kind: Service
@@ -157,34 +134,6 @@ spec:
 
 ---
 # PgBouncer for Clustering Database
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pgbouncer-clustering-config
-  namespace: default
-data:
-  pgbouncer.ini: |
-    [databases]
-    clusteringdb = host=postgres-clustering port=5432 dbname=clusteringdb
-    
-    [pgbouncer]
-    listen_addr = 0.0.0.0
-    listen_port = 6432
-    auth_type = md5
-    auth_file = /etc/pgbouncer/userlist.txt
-    pool_mode = transaction
-    max_client_conn = 1000
-    default_pool_size = 20
-    min_pool_size = 5
-    reserve_pool_size = 5
-    reserve_pool_timeout = 3
-    server_idle_timeout = 60
-    log_connections = 0
-    log_disconnections = 0
-    
-  userlist.txt: |
-    "postgres" "password"
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -202,12 +151,32 @@ spec:
     spec:
       containers:
       - name: pgbouncer
-        image: edoburu/pgbouncer:1.21.0
+        image: bitnami/pgbouncer:latest
         ports:
         - containerPort: 6432
-        volumeMounts:
-        - name: config
-          mountPath: /etc/pgbouncer
+        env:
+        - name: POSTGRESQL_HOST
+          value: "postgres-clustering"
+        - name: POSTGRESQL_PORT
+          value: "5432"
+        - name: POSTGRESQL_DATABASE
+          value: "clusteringdb"
+        - name: POSTGRESQL_USERNAME
+          value: "postgres"
+        - name: POSTGRESQL_PASSWORD
+          value: "password"
+        - name: PGBOUNCER_PORT
+          value: "6432"
+        - name: PGBOUNCER_POOL_MODE
+          value: "transaction"
+        - name: PGBOUNCER_MAX_CLIENT_CONN
+          value: "1000"
+        - name: PGBOUNCER_DEFAULT_POOL_SIZE
+          value: "20"
+        - name: PGBOUNCER_MIN_POOL_SIZE
+          value: "5"
+        - name: PGBOUNCER_RESERVE_POOL_SIZE
+          value: "5"
         resources:
           requests:
             cpu: 50m
@@ -215,10 +184,6 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
-      volumes:
-      - name: config
-        configMap:
-          name: pgbouncer-clustering-config
 ---
 apiVersion: v1
 kind: Service
@@ -234,34 +199,6 @@ spec:
 
 ---
 # PgBouncer for DXF Export Database
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pgbouncer-dxf-export-config
-  namespace: default
-data:
-  pgbouncer.ini: |
-    [databases]
-    dxfexportdb = host=postgres-dxf-export port=5432 dbname=dxfexportdb
-    
-    [pgbouncer]
-    listen_addr = 0.0.0.0
-    listen_port = 6432
-    auth_type = md5
-    auth_file = /etc/pgbouncer/userlist.txt
-    pool_mode = transaction
-    max_client_conn = 1000
-    default_pool_size = 20
-    min_pool_size = 5
-    reserve_pool_size = 5
-    reserve_pool_timeout = 3
-    server_idle_timeout = 60
-    log_connections = 0
-    log_disconnections = 0
-    
-  userlist.txt: |
-    "postgres" "password"
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -279,12 +216,32 @@ spec:
     spec:
       containers:
       - name: pgbouncer
-        image: edoburu/pgbouncer:1.21.0
+        image: bitnami/pgbouncer:latest
         ports:
         - containerPort: 6432
-        volumeMounts:
-        - name: config
-          mountPath: /etc/pgbouncer
+        env:
+        - name: POSTGRESQL_HOST
+          value: "postgres-dxf-export"
+        - name: POSTGRESQL_PORT
+          value: "5432"
+        - name: POSTGRESQL_DATABASE
+          value: "dxfexportdb"
+        - name: POSTGRESQL_USERNAME
+          value: "postgres"
+        - name: POSTGRESQL_PASSWORD
+          value: "password"
+        - name: PGBOUNCER_PORT
+          value: "6432"
+        - name: PGBOUNCER_POOL_MODE
+          value: "transaction"
+        - name: PGBOUNCER_MAX_CLIENT_CONN
+          value: "1000"
+        - name: PGBOUNCER_DEFAULT_POOL_SIZE
+          value: "20"
+        - name: PGBOUNCER_MIN_POOL_SIZE
+          value: "5"
+        - name: PGBOUNCER_RESERVE_POOL_SIZE
+          value: "5"
         resources:
           requests:
             cpu: 50m
@@ -292,10 +249,6 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
-      volumes:
-      - name: config
-        configMap:
-          name: pgbouncer-dxf-export-config
 ---
 apiVersion: v1
 kind: Service

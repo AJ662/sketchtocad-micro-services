@@ -30,7 +30,7 @@ spec:
             name: common-config
         env:
         - name: DATABASE_URL
-          value: "postgresql://postgres:password@pgbouncer-saga:6432/sagadb"
+          value: "postgresql://postgres:password@postgres-saga:5432/sagadb"
         - name: POSTGRES_DB
           value: "sagadb"
         - name: POSTGRES_USER
@@ -87,7 +87,7 @@ spec:
             name: common-config
         env:
         - name: DATABASE_URL
-          value: "postgresql://postgres:password@pgbouncer-saga:6432/sagadb"
+          value: "postgresql://postgres:password@postgres-saga:5432/sagadb"
         - name: POSTGRES_DB
           value: "sagadb"
         - name: POSTGRES_USER

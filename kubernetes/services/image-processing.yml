@@ -30,7 +30,7 @@ spec:
             name: common-config
         env:
         - name: DATABASE_URL
-          value: "postgresql://postgres:password@pgbouncer-image-processing:6432/imageprocessingdb"
+          value: "postgresql://postgres:password@postgres-image-processing:5432/imageprocessingdb"
         - name: REDIS_URL
           value: "redis://redis-cache:6379/0"
         - name: S3_ENDPOINT
@@ -38,7 +38,7 @@ spec:
         - name: MINIO_ENDPOINT
           value: "http://minio-storage:9000"
         - name: POSTGRES_HOST
-          value: "pgbouncer-image-processing"
+          value: "postgres-image-processing"
         - name: POSTGRES_DB
           value: "imageprocessingdb"
         - name: POSTGRES_USER
@@ -102,7 +102,7 @@ spec:
             name: common-config
         env:
         - name: DATABASE_URL
-          value: "postgresql://postgres:password@pgbouncer-image-processing:6432/imageprocessingdb"
+          value: "postgresql://postgres:password@postgres-image-processing:5432/imageprocessingdb"
         - name: REDIS_URL
           value: "redis://redis-cache:6379/0"
         - name: S3_ENDPOINT
@@ -110,7 +110,7 @@ spec:
         - name: MINIO_ENDPOINT
           value: "http://minio-storage:9000"
         - name: POSTGRES_HOST
-          value: "pgbouncer-image-processing"
+          value: "postgres-image-processing"
         - name: POSTGRES_DB
           value: "imageprocessingdb"
         - name: POSTGRES_USER
