@@ -1,5 +1,6 @@
 # Horizontal Pod Autoscalers for SketchToCAD Microservices
-# Scales pods based on CPU utilization (70% threshold)
+# Scales pods based on CPU utilization (50% threshold for faster scaling)
+# minReplicas=2 for critical services to handle burst traffic
 
 ---
 # API Gateway HPA
@@ -13,15 +14,15 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: api-gateway
-  minReplicas: 1
-  maxReplicas: 4
+  minReplicas: 2
+  maxReplicas: 6
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 50
 
 ---
 # Image Processing HPA
@@ -35,15 +36,15 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: image-processing
-  minReplicas: 1
-  maxReplicas: 5
+  minReplicas: 2
+  maxReplicas: 6
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 50
 
 ---
 # Image Processing Worker HPA
@@ -57,15 +58,15 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: image-processing-worker
-  minReplicas: 1
-  maxReplicas: 5
+  minReplicas: 2
+  maxReplicas: 6
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 50
 
 ---
 # Clustering HPA
@@ -79,15 +80,15 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: clustering
-  minReplicas: 1
-  maxReplicas: 4
+  minReplicas: 2
+  maxReplicas: 5
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 50
 
 ---
 # Clustering Worker HPA
@@ -101,15 +102,15 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: clustering-worker
-  minReplicas: 1
-  maxReplicas: 4
+  minReplicas: 2
+  maxReplicas: 5
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 50
 
 ---
 # DXF Export HPA
@@ -123,15 +124,15 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: dxf-export
-  minReplicas: 1
-  maxReplicas: 4
+  minReplicas: 2
+  maxReplicas: 5
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 50
 
 ---
 # DXF Export Worker HPA
@@ -145,15 +146,15 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: dxf-export-worker
-  minReplicas: 1
-  maxReplicas: 4
+  minReplicas: 2
+  maxReplicas: 5
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 50
 
 ---
 # Workflow Orchestrator HPA
@@ -167,15 +168,15 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: workflow-orchestrator
-  minReplicas: 1
-  maxReplicas: 4
+  minReplicas: 2
+  maxReplicas: 5
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 50
 
 ---
 # Orchestrator Worker HPA
@@ -189,12 +190,12 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: orchestrator-worker
-  minReplicas: 1
-  maxReplicas: 5
+  minReplicas: 2
+  maxReplicas: 6
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 50
