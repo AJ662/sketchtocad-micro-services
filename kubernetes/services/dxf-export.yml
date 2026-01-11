@@ -30,9 +30,9 @@ spec:
             name: common-config
         env:
         - name: DATABASE_URL
-          value: "postgresql://postgres:password@postgres-dxf-export:5432/dxfexportdb"
+          value: "postgresql://postgres:password@pgbouncer-dxf-export:6432/dxfexportdb"
         - name: POSTGRES_HOST
-          value: "postgres-dxf-export"
+          value: "pgbouncer-dxf-export"
         - name: POSTGRES_DB
           value: "dxfexportdb"
         - name: POSTGRES_USER
@@ -96,9 +96,9 @@ spec:
             name: common-config
         env:
         - name: DATABASE_URL
-          value: "postgresql://postgres:password@postgres-dxf-export:5432/dxfexportdb"
+          value: "postgresql://postgres:password@pgbouncer-dxf-export:6432/dxfexportdb"
         - name: POSTGRES_HOST
-          value: "postgres-dxf-export"
+          value: "pgbouncer-dxf-export"
         - name: POSTGRES_DB
           value: "dxfexportdb"
         - name: POSTGRES_USER
@@ -148,9 +148,9 @@ spec:
             name: common-config
         env:
         - name: DATABASE_URL
-          value: "postgresql://postgres:password@postgres-dxf-export:5432/dxfexportdb"
+          value: "postgresql://postgres:password@pgbouncer-dxf-export:6432/dxfexportdb"
         - name: POSTGRES_HOST
-          value: "postgres-dxf-export"
+          value: "pgbouncer-dxf-export"
         - name: POSTGRES_DB
           value: "dxfexportdb"
         - name: POSTGRES_USER

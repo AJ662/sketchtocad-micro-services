@@ -1,0 +1,310 @@
+# PgBouncer Connection Pooler for all PostgreSQL databases
+# This reduces connection overhead and prevents connection exhaustion
+
+---
+# PgBouncer for Saga Database (Workflow Orchestrator)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-saga-config
+  namespace: default
+data:
+  pgbouncer.ini: |
+    [databases]
+    sagadb = host=postgres-saga port=5432 dbname=sagadb
+    
+    [pgbouncer]
+    listen_addr = 0.0.0.0
+    listen_port = 6432
+    auth_type = md5
+    auth_file = /etc/pgbouncer/userlist.txt
+    pool_mode = transaction
+    max_client_conn = 1000
+    default_pool_size = 20
+    min_pool_size = 5
+    reserve_pool_size = 5
+    reserve_pool_timeout = 3
+    server_idle_timeout = 60
+    log_connections = 0
+    log_disconnections = 0
+    
+  userlist.txt: |
+    "postgres" "password"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-saga
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer-saga
+  template:
+    metadata:
+      labels:
+        app: pgbouncer-saga
+    spec:
+      containers:
+      - name: pgbouncer
+        image: edoburu/pgbouncer:1.21.0
+        ports:
+        - containerPort: 6432
+        volumeMounts:
+        - name: config
+          mountPath: /etc/pgbouncer
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+      volumes:
+      - name: config
+        configMap:
+          name: pgbouncer-saga-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer-saga
+  namespace: default
+spec:
+  ports:
+  - port: 6432
+    targetPort: 6432
+  selector:
+    app: pgbouncer-saga
+
+---
+# PgBouncer for Image Processing Database
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-image-processing-config
+  namespace: default
+data:
+  pgbouncer.ini: |
+    [databases]
+    imageprocessingdb = host=postgres-image-processing port=5432 dbname=imageprocessingdb
+    
+    [pgbouncer]
+    listen_addr = 0.0.0.0
+    listen_port = 6432
+    auth_type = md5
+    auth_file = /etc/pgbouncer/userlist.txt
+    pool_mode = transaction
+    max_client_conn = 1000
+    default_pool_size = 20
+    min_pool_size = 5
+    reserve_pool_size = 5
+    reserve_pool_timeout = 3
+    server_idle_timeout = 60
+    log_connections = 0
+    log_disconnections = 0
+    
+  userlist.txt: |
+    "postgres" "password"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-image-processing
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer-image-processing
+  template:
+    metadata:
+      labels:
+        app: pgbouncer-image-processing
+    spec:
+      containers:
+      - name: pgbouncer
+        image: edoburu/pgbouncer:1.21.0
+        ports:
+        - containerPort: 6432
+        volumeMounts:
+        - name: config
+          mountPath: /etc/pgbouncer
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+      volumes:
+      - name: config
+        configMap:
+          name: pgbouncer-image-processing-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer-image-processing
+  namespace: default
+spec:
+  ports:
+  - port: 6432
+    targetPort: 6432
+  selector:
+    app: pgbouncer-image-processing
+
+---
+# PgBouncer for Clustering Database
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-clustering-config
+  namespace: default
+data:
+  pgbouncer.ini: |
+    [databases]
+    clusteringdb = host=postgres-clustering port=5432 dbname=clusteringdb
+    
+    [pgbouncer]
+    listen_addr = 0.0.0.0
+    listen_port = 6432
+    auth_type = md5
+    auth_file = /etc/pgbouncer/userlist.txt
+    pool_mode = transaction
+    max_client_conn = 1000
+    default_pool_size = 20
+    min_pool_size = 5
+    reserve_pool_size = 5
+    reserve_pool_timeout = 3
+    server_idle_timeout = 60
+    log_connections = 0
+    log_disconnections = 0
+    
+  userlist.txt: |
+    "postgres" "password"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-clustering
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer-clustering
+  template:
+    metadata:
+      labels:
+        app: pgbouncer-clustering
+    spec:
+      containers:
+      - name: pgbouncer
+        image: edoburu/pgbouncer:1.21.0
+        ports:
+        - containerPort: 6432
+        volumeMounts:
+        - name: config
+          mountPath: /etc/pgbouncer
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+      volumes:
+      - name: config
+        configMap:
+          name: pgbouncer-clustering-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer-clustering
+  namespace: default
+spec:
+  ports:
+  - port: 6432
+    targetPort: 6432
+  selector:
+    app: pgbouncer-clustering
+
+---
+# PgBouncer for DXF Export Database
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-dxf-export-config
+  namespace: default
+data:
+  pgbouncer.ini: |
+    [databases]
+    dxfexportdb = host=postgres-dxf-export port=5432 dbname=dxfexportdb
+    
+    [pgbouncer]
+    listen_addr = 0.0.0.0
+    listen_port = 6432
+    auth_type = md5
+    auth_file = /etc/pgbouncer/userlist.txt
+    pool_mode = transaction
+    max_client_conn = 1000
+    default_pool_size = 20
+    min_pool_size = 5
+    reserve_pool_size = 5
+    reserve_pool_timeout = 3
+    server_idle_timeout = 60
+    log_connections = 0
+    log_disconnections = 0
+    
+  userlist.txt: |
+    "postgres" "password"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-dxf-export
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer-dxf-export
+  template:
+    metadata:
+      labels:
+        app: pgbouncer-dxf-export
+    spec:
+      containers:
+      - name: pgbouncer
+        image: edoburu/pgbouncer:1.21.0
+        ports:
+        - containerPort: 6432
+        volumeMounts:
+        - name: config
+          mountPath: /etc/pgbouncer
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+      volumes:
+      - name: config
+        configMap:
+          name: pgbouncer-dxf-export-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer-dxf-export
+  namespace: default
+spec:
+  ports:
+  - port: 6432
+    targetPort: 6432
+  selector:
+    app: pgbouncer-dxf-export

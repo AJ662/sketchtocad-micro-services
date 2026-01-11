@@ -1,0 +1,80 @@
+# Kafka Partition Scaling Job
+# Increases partitions on high-traffic topics to improve parallelism
+# Run: kubectl apply -f kafka-partition-scaling.yml
+# Monitor: kubectl logs -f job/kafka-partition-scaling
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-partition-scaling
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kafka-partition-scaler
+        image: confluentinc/cp-kafka:7.4.0
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          echo "=== Kafka Partition Scaling Script ==="
+          echo "Scaling partitions to improve parallelism under high load"
+          echo ""
+          
+          KAFKA_BROKER="kafka:9092"
+          NEW_PARTITIONS=5
+          
+          # High-traffic topics that benefit from more partitions
+          TOPICS=(
+            "image.processing.requests"
+            "image.processing.results"
+            "clustering.requests"
+            "clustering.results"
+            "dxf.export.requests"
+            "dxf.export.results"
+            "workflow.commands"
+            "workflow.events"
+            "session.sync"
+          )
+          
+          echo "Checking current partition counts..."
+          echo ""
+          
+          for topic in "${TOPICS[@]}"; do
+            echo "--- Processing topic: $topic ---"
+            
+            # Check if topic exists
+            if kafka-topics --bootstrap-server $KAFKA_BROKER --describe --topic $topic 2>/dev/null; then
+              CURRENT_PARTITIONS=$(kafka-topics --bootstrap-server $KAFKA_BROKER --describe --topic $topic 2>/dev/null | grep "PartitionCount" | awk '{print $4}')
+              
+              if [ -z "$CURRENT_PARTITIONS" ]; then
+                CURRENT_PARTITIONS=$(kafka-topics --bootstrap-server $KAFKA_BROKER --describe --topic $topic 2>/dev/null | grep -c "Partition:")
+              fi
+              
+              echo "Current partitions: $CURRENT_PARTITIONS"
+              
+              if [ "$CURRENT_PARTITIONS" -lt "$NEW_PARTITIONS" ]; then
+                echo "Scaling from $CURRENT_PARTITIONS to $NEW_PARTITIONS partitions..."
+                kafka-topics --bootstrap-server $KAFKA_BROKER --alter --topic $topic --partitions $NEW_PARTITIONS
+                echo "✓ Successfully scaled $topic to $NEW_PARTITIONS partitions"
+              else
+                echo "✓ Topic already has $CURRENT_PARTITIONS partitions (>= $NEW_PARTITIONS)"
+              fi
+            else
+              echo "⚠ Topic $topic does not exist, skipping..."
+            fi
+            echo ""
+          done
+          
+          echo "=== Partition Scaling Complete ==="
+          echo ""
+          echo "Final topic configuration:"
+          kafka-topics --bootstrap-server $KAFKA_BROKER --list | while read topic; do
+            PARTITIONS=$(kafka-topics --bootstrap-server $KAFKA_BROKER --describe --topic $topic 2>/dev/null | grep "PartitionCount" | awk '{print $4}')
+            echo "  $topic: $PARTITIONS partitions"
+          done
