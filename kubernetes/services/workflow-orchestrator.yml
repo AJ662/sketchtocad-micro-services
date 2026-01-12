@@ -29,8 +29,7 @@ spec:
         - configMapRef:
             name: common-config
         env:
-        - name: DATABASE_URL
-          value: "postgresql://postgres:password@postgres-saga:5432/sagadb"
+        # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_DB
           value: "sagadb"
         - name: POSTGRES_USER
@@ -93,8 +92,7 @@ spec:
         - configMapRef:
             name: common-config
         env:
-        - name: DATABASE_URL
-          value: "postgresql://postgres:password@postgres-saga:5432/sagadb"
+        # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_DB
           value: "sagadb"
         - name: POSTGRES_USER

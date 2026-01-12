@@ -29,8 +29,7 @@ spec:
         - configMapRef:
             name: common-config
         env:
-        - name: DATABASE_URL
-          value: "postgresql://postgres:password@postgres-dxf-export:5432/dxfexportdb"
+        # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_HOST
           value: "postgres-dxf-export"
         - name: POSTGRES_DB
@@ -95,8 +94,7 @@ spec:
         - configMapRef:
             name: common-config
         env:
-        - name: DATABASE_URL
-          value: "postgresql://postgres:password@postgres-dxf-export:5432/dxfexportdb"
+        # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_HOST
           value: "postgres-dxf-export"
         - name: POSTGRES_DB
@@ -147,8 +145,7 @@ spec:
         - configMapRef:
             name: common-config
         env:
-        - name: DATABASE_URL
-          value: "postgresql://postgres:password@postgres-dxf-export:5432/dxfexportdb"
+        # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_HOST
           value: "postgres-dxf-export"
         - name: POSTGRES_DB

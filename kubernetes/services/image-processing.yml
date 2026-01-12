@@ -29,8 +29,7 @@ spec:
         - configMapRef:
             name: common-config
         env:
-        - name: DATABASE_URL
-          value: "postgresql://postgres:password@postgres-image-processing:5432/imageprocessingdb"
+        # DATABASE_URL removed - constructed in app from secret env vars
         - name: REDIS_URL
           value: "redis://redis-cache:6379/0"
         - name: S3_ENDPOINT
@@ -101,8 +100,7 @@ spec:
         - configMapRef:
             name: common-config
         env:
-        - name: DATABASE_URL
-          value: "postgresql://postgres:password@postgres-image-processing:5432/imageprocessingdb"
+        # DATABASE_URL removed - constructed in app from secret env vars
         - name: REDIS_URL
           value: "redis://redis-cache:6379/0"
         - name: S3_ENDPOINT
