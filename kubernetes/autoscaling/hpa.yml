@@ -14,8 +14,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: api-gateway
-  minReplicas: 2
-  maxReplicas: 6
+  minReplicas: 1
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
@@ -36,8 +36,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: image-processing
-  minReplicas: 2
-  maxReplicas: 6
+  minReplicas: 1
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
@@ -58,8 +58,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: image-processing-worker
-  minReplicas: 2
-  maxReplicas: 6
+  minReplicas: 1
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
@@ -80,8 +80,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: clustering
-  minReplicas: 2
-  maxReplicas: 5
+  minReplicas: 1
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
@@ -102,8 +102,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: clustering-worker
-  minReplicas: 2
-  maxReplicas: 5
+  minReplicas: 1
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
@@ -124,8 +124,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: dxf-export
-  minReplicas: 2
-  maxReplicas: 5
+  minReplicas: 1
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
@@ -146,8 +146,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: dxf-export-worker
-  minReplicas: 2
-  maxReplicas: 5
+  minReplicas: 1
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
@@ -168,8 +168,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: workflow-orchestrator
-  minReplicas: 2
-  maxReplicas: 5
+  minReplicas: 1
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
@@ -190,8 +190,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: orchestrator-worker
-  minReplicas: 2
-  maxReplicas: 6
+  minReplicas: 1
+  maxReplicas: 2
   metrics:
   - type: Resource
     resource:
