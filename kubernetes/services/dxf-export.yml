@@ -31,7 +31,7 @@ spec:
         env:
         # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_HOST
-          value: "postgres-dxf-export"
+          value: "citus-dxf-export-coordinator"
         - name: POSTGRES_DB
           value: "dxfexportdb"
         - name: POSTGRES_USER
@@ -96,7 +96,7 @@ spec:
         env:
         # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_HOST
-          value: "postgres-dxf-export"
+          value: "citus-dxf-export-coordinator"
         - name: POSTGRES_DB
           value: "dxfexportdb"
         - name: POSTGRES_USER
@@ -147,7 +147,7 @@ spec:
         env:
         # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_HOST
-          value: "postgres-dxf-export"
+          value: "citus-dxf-export-coordinator"
         - name: POSTGRES_DB
           value: "dxfexportdb"
         - name: POSTGRES_USER

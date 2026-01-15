@@ -31,7 +31,7 @@ spec:
         env:
         # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_HOST
-          value: "postgres-clustering"
+          value: "citus-clustering-coordinator"
         - name: POSTGRES_DB
           value: "clusteringdb"
         - name: POSTGRES_USER
@@ -96,7 +96,7 @@ spec:
         env:
         # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_HOST
-          value: "postgres-clustering"
+          value: "citus-clustering-coordinator"
         - name: POSTGRES_DB
           value: "clusteringdb"
         - name: POSTGRES_USER
@@ -147,7 +147,7 @@ spec:
         env:
         # DATABASE_URL removed - constructed in app from secret env vars
         - name: POSTGRES_HOST
-          value: "postgres-clustering"
+          value: "citus-clustering-coordinator"
         - name: POSTGRES_DB
           value: "clusteringdb"
         - name: POSTGRES_USER
