@@ -1,6 +1,6 @@
 # ============================================================
 # Citus Sharded PostgreSQL for SketchToCad Services
-# Each service has a coordinator + 2 worker nodes
+# Each service has a coordinator + 1 worker node (Scaled down for resource constraints)
 # ============================================================
 
 # ConfigMap for Citus init scripts
@@ -157,24 +157,6 @@ spec:
     app: citus-image-processing-worker-1
 
 ---
-# Worker 2 Service
-apiVersion: v1
-kind: Service
-metadata:
-  name: citus-image-processing-worker-2
-  namespace: default
-  labels:
-    app: citus-image-processing
-    role: worker
-spec:
-  ports:
-    - port: 5432
-      name: postgres
-  clusterIP: None
-  selector:
-    app: citus-image-processing-worker-2
-
----
 # Coordinator StatefulSet
 apiVersion: apps/v1
 kind: StatefulSet
@@ -317,70 +299,6 @@ spec:
             storage: 5Gi
 
 ---
-# Worker 2 StatefulSet
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: citus-image-processing-worker-2
-  namespace: default
-spec:
-  serviceName: "citus-image-processing-worker-2"
-  replicas: 1
-  selector:
-    matchLabels:
-      app: citus-image-processing-worker-2
-  template:
-    metadata:
-      labels:
-        app: citus-image-processing-worker-2
-    spec:
-      containers:
-        - name: citus
-          image: citusdata/citus:12.1
-          ports:
-            - containerPort: 5432
-              name: postgres
-          env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secrets
-                  key: postgres-user
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secrets
-                  key: postgres-password
-            - name: POSTGRES_DB
-              value: "imageprocessingdb"
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-          volumeMounts:
-            - name: postgres-data
-              mountPath: /var/lib/postgresql/data
-          resources:
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
-            requests:
-              memory: "256Mi"
-              cpu: "250m"
-          readinessProbe:
-            exec:
-              command: ["pg_isready", "-U", "postgres"]
-            initialDelaySeconds: 15
-            periodSeconds: 10
-  volumeClaimTemplates:
-    - metadata:
-        name: postgres-data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: "gp3"
-        resources:
-          requests:
-            storage: 5Gi
-
----
 # ============================================================
 # Clustering Citus Cluster
 # ============================================================
@@ -415,20 +333,6 @@ spec:
   clusterIP: None
   selector:
     app: citus-clustering-worker-1
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: citus-clustering-worker-2
-  namespace: default
-spec:
-  ports:
-    - port: 5432
-      name: postgres
-  clusterIP: None
-  selector:
-    app: citus-clustering-worker-2
 
 ---
 apiVersion: apps/v1
@@ -560,63 +464,6 @@ spec:
             storage: 5Gi
 
 ---
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: citus-clustering-worker-2
-  namespace: default
-spec:
-  serviceName: "citus-clustering-worker-2"
-  replicas: 1
-  selector:
-    matchLabels:
-      app: citus-clustering-worker-2
-  template:
-    metadata:
-      labels:
-        app: citus-clustering-worker-2
-    spec:
-      containers:
-        - name: citus
-          image: citusdata/citus:12.1
-          ports:
-            - containerPort: 5432
-          env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secrets
-                  key: postgres-user
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secrets
-                  key: postgres-password
-            - name: POSTGRES_DB
-              value: "clusteringdb"
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-          volumeMounts:
-            - name: postgres-data
-              mountPath: /var/lib/postgresql/data
-          resources:
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
-            requests:
-              memory: "256Mi"
-              cpu: "250m"
-  volumeClaimTemplates:
-    - metadata:
-        name: postgres-data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: "gp3"
-        resources:
-          requests:
-            storage: 5Gi
-
----
 # ============================================================
 # DXF Export Citus Cluster
 # ============================================================
@@ -651,20 +498,6 @@ spec:
   clusterIP: None
   selector:
     app: citus-dxf-export-worker-1
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: citus-dxf-export-worker-2
-  namespace: default
-spec:
-  ports:
-    - port: 5432
-      name: postgres
-  clusterIP: None
-  selector:
-    app: citus-dxf-export-worker-2
 
 ---
 apiVersion: apps/v1
@@ -796,63 +629,6 @@ spec:
             storage: 5Gi
 
 ---
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: citus-dxf-export-worker-2
-  namespace: default
-spec:
-  serviceName: "citus-dxf-export-worker-2"
-  replicas: 1
-  selector:
-    matchLabels:
-      app: citus-dxf-export-worker-2
-  template:
-    metadata:
-      labels:
-        app: citus-dxf-export-worker-2
-    spec:
-      containers:
-        - name: citus
-          image: citusdata/citus:12.1
-          ports:
-            - containerPort: 5432
-          env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secrets
-                  key: postgres-user
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secrets
-                  key: postgres-password
-            - name: POSTGRES_DB
-              value: "dxfexportdb"
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-          volumeMounts:
-            - name: postgres-data
-              mountPath: /var/lib/postgresql/data
-          resources:
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
-            requests:
-              memory: "256Mi"
-              cpu: "250m"
-  volumeClaimTemplates:
-    - metadata:
-        name: postgres-data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: "gp3"
-        resources:
-          requests:
-            storage: 5Gi
-
----
 # ============================================================
 # Citus Init Job - Registers workers and distributes tables
 # ============================================================
@@ -882,28 +658,64 @@ spec:
               echo "Waiting for Citus clusters to be ready..."
               sleep 30
               
+              # Function to execute SQL using psql with error handling
+              exec_psql() {
+                local host=$1
+                local db=$2
+                local sql=$3
+                psql -h "$host" -U postgres -d "$db" -c "$sql"
+              }
+
               echo "Initializing Image Processing Citus cluster..."
               psql -h citus-image-processing-coordinator -U postgres -d imageprocessingdb <<EOF
+              -- Set coordinator host
+              SELECT citus_set_coordinator_host('citus-image-processing-coordinator', 5432);
+              -- Add worker node
               SELECT citus_add_node('citus-image-processing-worker-1', 5432);
-              SELECT citus_add_node('citus-image-processing-worker-2', 5432);
-              SELECT create_distributed_table('sessions', 'id', shard_count := 32);
-              SELECT create_reference_table('image_processing_sessions');
+              -- Distribute table if not exists
+              DO \$\$
+              BEGIN
+                  IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'sessions'::regclass) THEN
+                      PERFORM create_distributed_table('sessions', 'id', shard_count := 32);
+                  END IF;
+              END
+              \$\$;
+              -- Reference table if not exists
+              DO \$\$
+              BEGIN
+                  IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'image_processing_sessions'::regclass) THEN
+                      PERFORM create_reference_table('image_processing_sessions');
+                  END IF;
+              END
+              \$\$;
               SELECT nodename, nodeport FROM citus_get_active_worker_nodes();
               EOF
               
               echo "Initializing Clustering Citus cluster..."
               psql -h citus-clustering-coordinator -U postgres -d clusteringdb <<EOF
+              SELECT citus_set_coordinator_host('citus-clustering-coordinator', 5432);
               SELECT citus_add_node('citus-clustering-worker-1', 5432);
-              SELECT citus_add_node('citus-clustering-worker-2', 5432);
-              SELECT create_distributed_table('sessions', 'id', shard_count := 32);
+              DO \$\$
+              BEGIN
+                  IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'sessions'::regclass) THEN
+                      PERFORM create_distributed_table('sessions', 'id', shard_count := 32);
+                  END IF;
+              END
+              \$\$;
               SELECT nodename, nodeport FROM citus_get_active_worker_nodes();
               EOF
               
               echo "Initializing DXF Export Citus cluster..."
               psql -h citus-dxf-export-coordinator -U postgres -d dxfexportdb <<EOF
+              SELECT citus_set_coordinator_host('citus-dxf-export-coordinator', 5432);
               SELECT citus_add_node('citus-dxf-export-worker-1', 5432);
-              SELECT citus_add_node('citus-dxf-export-worker-2', 5432);
-              SELECT create_distributed_table('sessions', 'id', shard_count := 32);
+              DO \$\$
+              BEGIN
+                  IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'sessions'::regclass) THEN
+                      PERFORM create_distributed_table('sessions', 'id', shard_count := 32);
+                  END IF;
+              END
+              \$\$;
               SELECT nodename, nodeport FROM citus_get_active_worker_nodes();
               EOF
               
