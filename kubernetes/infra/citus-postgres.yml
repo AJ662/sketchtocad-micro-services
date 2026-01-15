@@ -1,0 +1,910 @@
+# ============================================================
+# Citus Sharded PostgreSQL for SketchToCad Services
+# Each service has a coordinator + 2 worker nodes
+# ============================================================
+
+# ConfigMap for Citus init scripts
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: citus-init-scripts
+  namespace: default
+data:
+  init-image-processing.sql: |
+    CREATE EXTENSION IF NOT EXISTS citus;
+    CREATE TABLE IF NOT EXISTS sessions (
+        id VARCHAR(64) PRIMARY KEY,
+        saga_id VARCHAR(64),
+        status VARCHAR(30) DEFAULT 'created',
+        raw_image_ref VARCHAR(256),
+        bed_data JSONB,
+        bed_count INTEGER,
+        image_shape JSONB,
+        image_processing_time_ms INTEGER,
+        enhanced_colors JSONB,
+        enhancement_method VARCHAR(50),
+        clusters JSONB,
+        cluster_count INTEGER,
+        clustering_time_ms INTEGER,
+        dxf_content BYTEA,
+        dxf_file_ref VARCHAR(256),
+        dxf_file_size INTEGER,
+        export_time_ms INTEGER,
+        error_message TEXT,
+        retry_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW(),
+        completed_at TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_sessions_saga_id ON sessions(saga_id);
+    CREATE TABLE IF NOT EXISTS image_processing_sessions (
+        id VARCHAR PRIMARY KEY,
+        original_image_s3_key VARCHAR,
+        processed_borders_s3_key VARCHAR,
+        image_width INTEGER,
+        image_height INTEGER,
+        file_size_bytes INTEGER,
+        redis_session_key VARCHAR,
+        bed_count INTEGER DEFAULT 0,
+        bed_data_s3_key VARCHAR,
+        raw_border_pixels INTEGER,
+        clean_border_pixels INTEGER,
+        final_border_pixels INTEGER,
+        processing_time_ms FLOAT,
+        status VARCHAR DEFAULT 'processing',
+        error_message VARCHAR,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW(),
+        expires_at TIMESTAMP,
+        anonymized BOOLEAN DEFAULT FALSE
+    );
+
+  init-clustering.sql: |
+    CREATE EXTENSION IF NOT EXISTS citus;
+    CREATE TABLE IF NOT EXISTS sessions (
+        id VARCHAR(64) PRIMARY KEY,
+        saga_id VARCHAR(64),
+        status VARCHAR(30) DEFAULT 'created',
+        raw_image_ref VARCHAR(256),
+        bed_data JSONB,
+        bed_count INTEGER,
+        image_shape JSONB,
+        image_processing_time_ms INTEGER,
+        enhanced_colors JSONB,
+        enhancement_method VARCHAR(50),
+        clusters JSONB,
+        cluster_count INTEGER,
+        clustering_time_ms INTEGER,
+        dxf_content BYTEA,
+        dxf_file_ref VARCHAR(256),
+        dxf_file_size INTEGER,
+        export_time_ms INTEGER,
+        error_message TEXT,
+        retry_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW(),
+        completed_at TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_sessions_saga_id ON sessions(saga_id);
+
+  init-dxf-export.sql: |
+    CREATE EXTENSION IF NOT EXISTS citus;
+    CREATE TABLE IF NOT EXISTS sessions (
+        id VARCHAR(64) PRIMARY KEY,
+        saga_id VARCHAR(64),
+        status VARCHAR(30) DEFAULT 'created',
+        raw_image_ref VARCHAR(256),
+        bed_data JSONB,
+        bed_count INTEGER,
+        image_shape JSONB,
+        image_processing_time_ms INTEGER,
+        enhanced_colors JSONB,
+        enhancement_method VARCHAR(50),
+        clusters JSONB,
+        cluster_count INTEGER,
+        clustering_time_ms INTEGER,
+        dxf_content BYTEA,
+        dxf_file_ref VARCHAR(256),
+        dxf_file_size INTEGER,
+        export_time_ms INTEGER,
+        error_message TEXT,
+        retry_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW(),
+        completed_at TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_sessions_saga_id ON sessions(saga_id);
+
+---
+# ============================================================
+# Image Processing Citus Cluster
+# ============================================================
+
+# Coordinator Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: citus-image-processing-coordinator
+  namespace: default
+  labels:
+    app: citus-image-processing
+    role: coordinator
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: citus-image-processing
+    role: coordinator
+
+---
+# Worker 1 Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: citus-image-processing-worker-1
+  namespace: default
+  labels:
+    app: citus-image-processing
+    role: worker
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: citus-image-processing-worker-1
+
+---
+# Worker 2 Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: citus-image-processing-worker-2
+  namespace: default
+  labels:
+    app: citus-image-processing
+    role: worker
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: citus-image-processing-worker-2
+
+---
+# Coordinator StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-image-processing-coordinator
+  namespace: default
+spec:
+  serviceName: "citus-image-processing-coordinator"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: citus-image-processing
+      role: coordinator
+  template:
+    metadata:
+      labels:
+        app: citus-image-processing
+        role: coordinator
+    spec:
+      containers:
+        - name: citus
+          image: citusdata/citus:12.1
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "imageprocessingdb"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init-image-processing.sql
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: citus-init-scripts
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "gp3"  # AWS EBS gp3 storage class
+        resources:
+          requests:
+            storage: 10Gi
+
+---
+# Worker 1 StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-image-processing-worker-1
+  namespace: default
+spec:
+  serviceName: "citus-image-processing-worker-1"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: citus-image-processing-worker-1
+  template:
+    metadata:
+      labels:
+        app: citus-image-processing-worker-1
+    spec:
+      containers:
+        - name: citus
+          image: citusdata/citus:12.1
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "imageprocessingdb"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "gp3"
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+# Worker 2 StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-image-processing-worker-2
+  namespace: default
+spec:
+  serviceName: "citus-image-processing-worker-2"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: citus-image-processing-worker-2
+  template:
+    metadata:
+      labels:
+        app: citus-image-processing-worker-2
+    spec:
+      containers:
+        - name: citus
+          image: citusdata/citus:12.1
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "imageprocessingdb"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "gp3"
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+# ============================================================
+# Clustering Citus Cluster
+# ============================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: citus-clustering-coordinator
+  namespace: default
+  labels:
+    app: citus-clustering
+    role: coordinator
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: citus-clustering
+    role: coordinator
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: citus-clustering-worker-1
+  namespace: default
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: citus-clustering-worker-1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: citus-clustering-worker-2
+  namespace: default
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: citus-clustering-worker-2
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-clustering-coordinator
+  namespace: default
+spec:
+  serviceName: "citus-clustering-coordinator"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: citus-clustering
+      role: coordinator
+  template:
+    metadata:
+      labels:
+        app: citus-clustering
+        role: coordinator
+    spec:
+      containers:
+        - name: citus
+          image: citusdata/citus:12.1
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "clusteringdb"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init-clustering.sql
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: citus-init-scripts
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "gp3"
+        resources:
+          requests:
+            storage: 10Gi
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-clustering-worker-1
+  namespace: default
+spec:
+  serviceName: "citus-clustering-worker-1"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: citus-clustering-worker-1
+  template:
+    metadata:
+      labels:
+        app: citus-clustering-worker-1
+    spec:
+      containers:
+        - name: citus
+          image: citusdata/citus:12.1
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "clusteringdb"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "gp3"
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-clustering-worker-2
+  namespace: default
+spec:
+  serviceName: "citus-clustering-worker-2"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: citus-clustering-worker-2
+  template:
+    metadata:
+      labels:
+        app: citus-clustering-worker-2
+    spec:
+      containers:
+        - name: citus
+          image: citusdata/citus:12.1
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "clusteringdb"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "gp3"
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+# ============================================================
+# DXF Export Citus Cluster
+# ============================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: citus-dxf-export-coordinator
+  namespace: default
+  labels:
+    app: citus-dxf-export
+    role: coordinator
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: citus-dxf-export
+    role: coordinator
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: citus-dxf-export-worker-1
+  namespace: default
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: citus-dxf-export-worker-1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: citus-dxf-export-worker-2
+  namespace: default
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: citus-dxf-export-worker-2
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-dxf-export-coordinator
+  namespace: default
+spec:
+  serviceName: "citus-dxf-export-coordinator"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: citus-dxf-export
+      role: coordinator
+  template:
+    metadata:
+      labels:
+        app: citus-dxf-export
+        role: coordinator
+    spec:
+      containers:
+        - name: citus
+          image: citusdata/citus:12.1
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "dxfexportdb"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init-dxf-export.sql
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: citus-init-scripts
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "gp3"
+        resources:
+          requests:
+            storage: 10Gi
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-dxf-export-worker-1
+  namespace: default
+spec:
+  serviceName: "citus-dxf-export-worker-1"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: citus-dxf-export-worker-1
+  template:
+    metadata:
+      labels:
+        app: citus-dxf-export-worker-1
+    spec:
+      containers:
+        - name: citus
+          image: citusdata/citus:12.1
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "dxfexportdb"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "gp3"
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: citus-dxf-export-worker-2
+  namespace: default
+spec:
+  serviceName: "citus-dxf-export-worker-2"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: citus-dxf-export-worker-2
+  template:
+    metadata:
+      labels:
+        app: citus-dxf-export-worker-2
+    spec:
+      containers:
+        - name: citus
+          image: citusdata/citus:12.1
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "dxfexportdb"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "gp3"
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+# ============================================================
+# Citus Init Job - Registers workers and distributes tables
+# ============================================================
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: citus-init
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: citus-init
+          image: citusdata/citus:12.1
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Waiting for Citus clusters to be ready..."
+              sleep 30
+              
+              echo "Initializing Image Processing Citus cluster..."
+              psql -h citus-image-processing-coordinator -U postgres -d imageprocessingdb <<EOF
+              SELECT citus_add_node('citus-image-processing-worker-1', 5432);
+              SELECT citus_add_node('citus-image-processing-worker-2', 5432);
+              SELECT create_distributed_table('sessions', 'id', shard_count := 32);
+              SELECT create_reference_table('image_processing_sessions');
+              SELECT nodename, nodeport FROM citus_get_active_worker_nodes();
+              EOF
+              
+              echo "Initializing Clustering Citus cluster..."
+              psql -h citus-clustering-coordinator -U postgres -d clusteringdb <<EOF
+              SELECT citus_add_node('citus-clustering-worker-1', 5432);
+              SELECT citus_add_node('citus-clustering-worker-2', 5432);
+              SELECT create_distributed_table('sessions', 'id', shard_count := 32);
+              SELECT nodename, nodeport FROM citus_get_active_worker_nodes();
+              EOF
+              
+              echo "Initializing DXF Export Citus cluster..."
+              psql -h citus-dxf-export-coordinator -U postgres -d dxfexportdb <<EOF
+              SELECT citus_add_node('citus-dxf-export-worker-1', 5432);
+              SELECT citus_add_node('citus-dxf-export-worker-2', 5432);
+              SELECT create_distributed_table('sessions', 'id', shard_count := 32);
+              SELECT nodename, nodeport FROM citus_get_active_worker_nodes();
+              EOF
+              
+              echo "All Citus clusters initialized successfully!"
