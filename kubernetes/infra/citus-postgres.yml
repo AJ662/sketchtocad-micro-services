@@ -656,67 +656,33 @@ spec:
             - -c
             - |
               echo "Waiting for Citus clusters to be ready..."
-              sleep 30
+              sleep 15
               
               # Function to execute SQL using psql with error handling
               exec_psql() {
                 local host=$1
                 local db=$2
                 local sql=$3
-                psql -h "$host" -U postgres -d "$db" -c "$sql"
+                PGPASSWORD=$PGPASSWORD psql -h "$host" -U postgres -d "$db" -c "$sql"
               }
 
               echo "Initializing Image Processing Citus cluster..."
-              psql -h citus-image-processing-coordinator -U postgres -d imageprocessingdb <<EOF
-              -- Set coordinator host
-              SELECT citus_set_coordinator_host('citus-image-processing-coordinator', 5432);
-              -- Add worker node
-              SELECT citus_add_node('citus-image-processing-worker-1', 5432);
-              -- Distribute table if not exists
-              DO \$\$
-              BEGIN
-                  IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'sessions'::regclass) THEN
-                      PERFORM create_distributed_table('sessions', 'id', shard_count := 32);
-                  END IF;
-              END
-              \$\$;
-              -- Reference table if not exists
-              DO \$\$
-              BEGIN
-                  IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'image_processing_sessions'::regclass) THEN
-                      PERFORM create_reference_table('image_processing_sessions');
-                  END IF;
-              END
-              \$\$;
-              SELECT nodename, nodeport FROM citus_get_active_worker_nodes();
-              EOF
+              exec_psql citus-image-processing-coordinator imageprocessingdb "SELECT citus_set_coordinator_host('citus-image-processing-coordinator', 5432);"
+              exec_psql citus-image-processing-coordinator imageprocessingdb "SELECT citus_add_node('citus-image-processing-worker-1', 5432);"
+              exec_psql citus-image-processing-coordinator imageprocessingdb "DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'sessions'::regclass) THEN PERFORM create_distributed_table('sessions', 'id', shard_count := 32); END IF; END \$\$;"
+              exec_psql citus-image-processing-coordinator imageprocessingdb "DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'image_processing_sessions'::regclass) THEN PERFORM create_reference_table('image_processing_sessions'); END IF; END \$\$;"
+              exec_psql citus-image-processing-coordinator imageprocessingdb "SELECT nodename, nodeport FROM citus_get_active_worker_nodes();"
               
               echo "Initializing Clustering Citus cluster..."
-              psql -h citus-clustering-coordinator -U postgres -d clusteringdb <<EOF
-              SELECT citus_set_coordinator_host('citus-clustering-coordinator', 5432);
-              SELECT citus_add_node('citus-clustering-worker-1', 5432);
-              DO \$\$
-              BEGIN
-                  IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'sessions'::regclass) THEN
-                      PERFORM create_distributed_table('sessions', 'id', shard_count := 32);
-                  END IF;
-              END
-              \$\$;
-              SELECT nodename, nodeport FROM citus_get_active_worker_nodes();
-              EOF
+              exec_psql citus-clustering-coordinator clusteringdb "SELECT citus_set_coordinator_host('citus-clustering-coordinator', 5432);"
+              exec_psql citus-clustering-coordinator clusteringdb "SELECT citus_add_node('citus-clustering-worker-1', 5432);"
+              exec_psql citus-clustering-coordinator clusteringdb "DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'sessions'::regclass) THEN PERFORM create_distributed_table('sessions', 'id', shard_count := 32); END IF; END \$\$;"
+              exec_psql citus-clustering-coordinator clusteringdb "SELECT nodename, nodeport FROM citus_get_active_worker_nodes();"
               
               echo "Initializing DXF Export Citus cluster..."
-              psql -h citus-dxf-export-coordinator -U postgres -d dxfexportdb <<EOF
-              SELECT citus_set_coordinator_host('citus-dxf-export-coordinator', 5432);
-              SELECT citus_add_node('citus-dxf-export-worker-1', 5432);
-              DO \$\$
-              BEGIN
-                  IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'sessions'::regclass) THEN
-                      PERFORM create_distributed_table('sessions', 'id', shard_count := 32);
-                  END IF;
-              END
-              \$\$;
-              SELECT nodename, nodeport FROM citus_get_active_worker_nodes();
-              EOF
+              exec_psql citus-dxf-export-coordinator dxfexportdb "SELECT citus_set_coordinator_host('citus-dxf-export-coordinator', 5432);"
+              exec_psql citus-dxf-export-coordinator dxfexportdb "SELECT citus_add_node('citus-dxf-export-worker-1', 5432);"
+              exec_psql citus-dxf-export-coordinator dxfexportdb "DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM citus_tables WHERE table_name = 'sessions'::regclass) THEN PERFORM create_distributed_table('sessions', 'id', shard_count := 32); END IF; END \$\$;"
+              exec_psql citus-dxf-export-coordinator dxfexportdb "SELECT nodename, nodeport FROM citus_get_active_worker_nodes();"
               
               echo "All Citus clusters initialized successfully!"
