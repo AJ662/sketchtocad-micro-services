@@ -223,11 +223,11 @@ spec:
               subPath: init-image-processing.sql
           resources:
             limits:
-              memory: "1Gi"
-              cpu: "1000m"
-            requests:
               memory: "512Mi"
               cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
@@ -478,11 +478,11 @@ spec:
               subPath: init-clustering.sql
           resources:
             limits:
-              memory: "1Gi"
-              cpu: "1000m"
-            requests:
               memory: "512Mi"
               cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
@@ -714,11 +714,11 @@ spec:
               subPath: init-dxf-export.sql
           resources:
             limits:
-              memory: "1Gi"
-              cpu: "1000m"
-            requests:
               memory: "512Mi"
               cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
