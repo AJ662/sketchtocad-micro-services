@@ -1,0 +1,85 @@
+# PostgreSQL for Saga/Workflow Orchestrator
+# This remains as standalone Postgres (not Citus) as it's the orchestrator state
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secrets
+  namespace: default
+type: Opaque
+stringData:
+  postgres-user: "postgres"
+  postgres-password: "password"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-saga
+  namespace: default
+  labels:
+    app: postgres-saga
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: postgres-saga
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-saga
+  namespace: default
+spec:
+  serviceName: "postgres-saga"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-saga
+  template:
+    metadata:
+      labels:
+        app: postgres-saga
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "sagadb"
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "gp3"
+      resources:
+        requests:
+          storage: 5Gi
