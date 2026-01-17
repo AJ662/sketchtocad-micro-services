@@ -16,7 +16,7 @@ metadata:
     # HTTPS Configuration
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-1:654654387729:certificate/4ac48065-a8e1-4de5-a325-c11368e23492
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-1:654654387729:certificate/a95e1f11-fd94-42c3-8490-2acbd8aa7408
 spec:
   rules:
   - host: sketchtocad.link
