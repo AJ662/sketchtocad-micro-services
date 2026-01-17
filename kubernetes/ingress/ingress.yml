@@ -13,9 +13,14 @@ metadata:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/healthcheck-path: /
+    # HTTPS Configuration
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-1:654654387729:certificate/4ac48065-a8e1-4de5-a325-c11368e23492
 spec:
   rules:
-  - http:
+  - host: sketchtocad.link
+    http:
       paths:
       # API Gateway - handles /api/v1/*
       - path: /api
